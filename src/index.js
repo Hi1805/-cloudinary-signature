@@ -10,23 +10,25 @@ export default {
 
     const stringToSign = `timestamp=${timestamp}`;
     const encoder = new TextEncoder();
-    const keyData = encoder.encode(apiSecret);
-    const data = encoder.encode(stringToSign);
 
-    const cryptoKey = await crypto.subtle.importKey(
+    // Dùng apiSecret làm key
+    const key = await crypto.subtle.importKey(
       "raw",
-      keyData,
+      encoder.encode(apiSecret),
       { name: "HMAC", hash: "SHA-1" },
       false,
       ["sign"]
     );
 
-    const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, data);
+    const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(stringToSign));
     const hashArray = Array.from(new Uint8Array(signatureBuffer));
-    const signature = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    const signature = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 
     return new Response(
-      JSON.stringify({ signature, string_to_sign: stringToSign }),
+      JSON.stringify({
+        signature,
+        string_to_sign: stringToSign,
+      }),
       {
         headers: { "Content-Type": "application/json" },
       }
